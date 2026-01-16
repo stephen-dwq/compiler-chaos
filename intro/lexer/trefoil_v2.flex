@@ -1,7 +1,6 @@
-/* definitions */
-
 %top{
-    #include "y.tab.h"
+#include "parser.tab.h"
+#include <string.h>
 }
 
 digit [0-9]
@@ -12,7 +11,7 @@ letter [a-zA-Z]
 
 "(" { return LP; }
 ")" { return RP; }
-";" { return SC; }
+";".* { /* comment, ignore */ }
 "true" { return TRUE; }
 "false" { return FALSE; }
 "nil" { return NIL; }
@@ -30,20 +29,20 @@ letter [a-zA-Z]
 "car" { return CAR; }
 "cdr" { return CDR; }
 {letter}({letter}|{digit})* {
-    yylval.id = strdup(yytext); 
-    return IDENT; 
+    yylval.id = strdup(yytext);
+    return IDENT;
 }
 {digit}+ {
     yylval.num = atoi(yytext);
-    return NUMBER; 
+    return NUMBER;
 }
-[\t\n\r] 
-. { 
-    printf("Unknown character [%c]\n", yytext[0]); 
-    return UNK; 
+[ \t\n\r]+   { /* skip whitespace */ }
+. {
+    fprintf("Unknown character [%c]\n", yytext[0]);
+    exit(1);
 }
 
 %%
-/* user code */ 
+/* user code */
 
 int yywrap(void){ return 1; }
