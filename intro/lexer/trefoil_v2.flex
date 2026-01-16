@@ -1,5 +1,6 @@
 %top{
-#include "parser.tab.h"
+typedef struct AST AST;
+#include "../parser/trefoil_v2.tab.h"
 #include <string.h>
 }
 
@@ -7,7 +8,6 @@ digit [0-9]
 letter [a-zA-Z]
 
 %%
-/* rules */
 
 "(" { return LP; }
 ")" { return RP; }
@@ -38,11 +38,10 @@ letter [a-zA-Z]
 }
 [ \t\n\r]+   { /* skip whitespace */ }
 . {
-    fprintf("Unknown character [%c]\n", yytext[0]);
+    fprintf(stderr, "Unknown character [%c]\n", yytext[0]);
     exit(1);
 }
 
 %%
-/* user code */
 
 int yywrap(void){ return 1; }
