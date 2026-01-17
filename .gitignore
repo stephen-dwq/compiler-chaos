@@ -1,3 +1,3 @@
-intro/trefoil_v2
-intro/lexer/trefoil_v2.yy.c
-intro/parser/trefoil_v2.tab.*
+intro/small_ml
+intro/lexer/small_ml.yy.c
+intro/parser/small_ml.tab.*

@@ -2,19 +2,19 @@ CC      := clang
 FLEX    := flex
 YACC    := byacc
 
+CFLAGS  := -Wall -Wextra
+
 LEXER_DIR   := lexer
 PARSER_DIR  := parser
 
-LEXER_SRC   := $(LEXER_DIR)/trefoil_v2.flex
-PARSER_SRC  := $(PARSER_DIR)/trefoil_v2.yacc
+TARGET      := small_ml
 
-LEXER_C     := $(LEXER_DIR)/trefoil_v2.yy.c
-PARSER_C    := $(PARSER_DIR)/trefoil_v2.tab.c
-PARSER_H    := $(PARSER_DIR)/trefoil_v2.tab.h
+LEXER_SRC   := $(LEXER_DIR)/$(TARGET).flex
+PARSER_SRC  := $(PARSER_DIR)/$(TARGET).yacc
 
-TARGET      := trefoil_v2
-
-CFLAGS  := -Wall -Wextra
+LEXER_C     := $(LEXER_DIR)/$(TARGET).yy.c
+PARSER_C    := $(PARSER_DIR)/$(TARGET).tab.c
+PARSER_H    := $(PARSER_DIR)/$(TARGET).tab.h
 
 
 all: $(TARGET)

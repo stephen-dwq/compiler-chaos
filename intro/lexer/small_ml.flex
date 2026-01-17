@@ -1,6 +1,6 @@
 %top{
 typedef struct AST AST;
-#include "../parser/trefoil_v2.tab.h"
+#include "../parser/small_ml.tab.h"
 #include <string.h>
 }
 
