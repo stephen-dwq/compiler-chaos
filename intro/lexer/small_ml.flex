@@ -1,5 +1,6 @@
 %top{
 typedef struct AST AST;
+typedef struct Case Case;
 #include "../parser/small_ml.tab.h"
 #include <string.h>
 }
@@ -11,23 +12,32 @@ letter [a-zA-Z]
 
 "(" { return LP; }
 ")" { return RP; }
-";".* { /* comment, ignore */ }
+
+";".*\n { /* comment */ }
+
 "true" { return TRUE; }
 "false" { return FALSE; }
-"nil" { return NIL; }
-"test" { return TEST; }
-"define" { return DEFINE; }
+"unit" { return UNIT; }
+
+"match" { return MATCH; }
+"with" { return WITH; }
+"if" { return IF; }
+"then" { return THEN; }
+"else" { return ELSE; }
+"let" { return LET; }
+"in" { return IN; }
+"end" { return END; }
+
+"[]" { return E_LIST; }
+"::" { return CONS; }
+"->" { return ARROW; }
+
+"|" { return BAR; }
 "+" { return PLUS; }
 "-" { return MINUS; }
 "*" { return TIMES; }
 "=" { return EQUALS; }
-"if" { return IF; }
-"let" { return LET; }
-"cons" { return CONS; }
-"nil?" { return NIL_HUH; }
-"cons?" { return CONS_HUH; }
-"car" { return CAR; }
-"cdr" { return CDR; }
+
 {letter}({letter}|{digit})* {
     yylval.id = strdup(yytext);
     return IDENT;

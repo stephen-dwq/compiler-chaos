@@ -5,119 +5,133 @@
 
 
 typedef enum {
-    AST_INT, AST_BOOL, AST_NIL, AST_VAR,
-    AST_DEFINE, AST_TEST,
-    AST_PLUS, AST_MINUS, AST_TIMES, AST_EQUALS,
-    AST_IF, AST_LET,
+    AST_INT,
+    AST_BOOL,
+    AST_UNIT,
+    AST_VAR,
+    AST_BINOP,
+    AST_IF,
+    AST_LET,
+    AST_NIL,
     AST_CONS,
-    AST_NIL_HUH, AST_CONS_HUH, AST_CAR, AST_CDR,
-    AST_PROGRAM
+    AST_MATCH
 } ASTKind;
 
-typedef struct AST {
+typedef enum {
+    OP_PLUS,
+    OP_MINUS,
+    OP_TIMES,
+    OP_EQ
+} BinOp;
+
+typedef struct AST AST;
+typedef struct Case Case;
+
+struct Case {
+    AST *pat;
+    AST *exp;
+    Case *next;
+};
+
+struct AST {
     ASTKind kind;
-
     union {
-        int int_val;
-        int bool_val;
-        char *var;
+        int num;
+        int boolean;
+        char *id;
 
-        struct { struct AST *a, *b; } bin;
-
-        struct {
-            struct AST *cond, *then_branch, *else_branch;
-        } if_expr;
-
-        struct {
-            char *var;
-            struct AST *value, *body;
-        } let_expr;
-
-        struct {
-            struct AST **items;
-            int count;
-        } program;
+        struct { BinOp op; AST *lhs, *rhs; } binop;
+        struct { AST *cond, *then_br, *else_br; } ifexp;
+        struct { char *id; AST *val, *body; } let;
+        struct { AST *hd, *tl; } cons;
+        struct { AST *scrutinee; Case *cases; } match;
     };
-} AST;
+};
 
 AST *root;
 
 /* constructors */
-AST *ast_int(int v) {
+AST *mk_int(int n) {
     AST *n = malloc(sizeof(AST));
     n->kind = AST_INT;
-    n->int_val = v;
+    n->num = n;
+
     return n;
 }
 
-AST *ast_bool(int v) {
+AST *mk_bool(int b) {
     AST *n = malloc(sizeof(AST));
     n->kind = AST_BOOL;
-    n->bool_val = v;
+    n->boolean = b;
+
     return n;
 }
 
-AST *ast_nil(void) {
+AST *mk_unit(void) {
     AST *n = malloc(sizeof(AST));
-    n->kind = AST_NIL;
+    n->kind = AST_UNIT;
+
     return n;
 }
 
-AST *ast_var(char *v) {
+AST *mk_var(char *s) {
     AST *n = malloc(sizeof(AST));
     n->kind = AST_VAR;
-    n->var = v;
+    n->id = stdrup(s);
+
     return n;
 }
 
-AST *ast_bin(ASTKind k, AST *a, AST *b) {
+AST *mk_binop(BinOp op, AST *l, AST *r) {
     AST *n = malloc(sizeof(AST));
-    n->kind = k;
-    n->bin.a = a;
-    n->bin.b = b;
+    n->kind = AST_BINOP;
+    n->binop.op = op; n->binop.lhs = l; n->binop.rhs = r;
+
     return n;
 }
 
-AST *ast_if(AST *c, AST *t, AST *e) {
+AST *mk_if(AST *c, AST *t, AST *e) {
     AST *n = malloc(sizeof(AST));
     n->kind = AST_IF;
-    n->if_expr.cond = c;
-    n->if_expr.then_branch = t;
-    n->if_expr.else_branch = e;
+    n->ifexp.cond = c; n->ifexp.then_br = t; n->ifexp.else_br = e;
+
     return n;
 }
 
-AST *ast_let(char *v, AST *val, AST *body) {
+AST *mk_let(char *id, AST *v, AST *b) {
     AST *n = malloc(sizeof(AST));
     n->kind = AST_LET;
-    n->let_expr.var = v;
-    n->let_expr.value = val;
-    n->let_expr.body = body;
+    n->let.id = strdup(id); n->let.val = v; n->let.body = b;
+
     return n;
 }
 
-AST *ast_define(char *v, AST *e) {
+AST *mk_nil(void) {
     AST *n = malloc(sizeof(AST));
-    n->kind = AST_DEFINE;
-    n->bin.a = ast_var(v);
-    n->bin.b = e;
+    n->kind = AST_NIL;
+
     return n;
 }
 
-AST *ast_test(AST *e) {
+AST *mk_cons(AST *h, AST *t) {
     AST *n = malloc(sizeof(AST));
-    n->kind = AST_TEST;
-    n->bin.a = e;
-    n->bin.b = NULL;
+    n->kind = AST_CONS;
+    n->cons.hd = h; n->cons.tl = t;
+
     return n;
 }
 
-AST *ast_program(AST **items, int count) {
+AST *mk_match(AST *e, Case *cs) {
     AST *n = malloc(sizeof(AST));
-    n->kind = AST_PROGRAM;
-    n->program.items = items;
-    n->program.count = count;
+    n->kind = AST_MATCH;
+    n->match.scrutinee = e; n.match->cases = cs;
+
     return n;
+}
+
+Case *mk_case(AST *p, AST *e, Case *n) {
+    Case *n = malloc(sizeof(AST));
+    c->pat = p; c->exp = e; c->next = n;
 }
 
 void yyerror(const char *s);
@@ -128,156 +142,103 @@ int yylex(void);
     int num;
     char *id;
     AST *ast;
-    struct {
-        AST **items;
-        int count;
-    } list;
+    Case *case_list;
 }
 
-%token <id> IDENT
 %token <num> NUMBER
-%token LP RP
-%token TRUE FALSE NIL
-%token TEST DEFINE
-%token PLUS MINUS TIMES EQUALS
-%token IF LET
-%token CONS
-%token NIL_HUH CONS_HUH CAR CDR
+%token <id> IDENT
 
-%type <ast> program binding expression literal
-%type <list> bindings
+%token LP RP
+
+%token TRUE FALSE UNIT
+%token IF THEN ELSE LET IN END
+%token MATCH WITH
+%token PLUS MINUS TIMES EQUALS
+%token CONS ARROW BAR
+%token E_LIST
+
+%type <ast> program exp atom pattern
+%type <case_list> cases case
 
 %start program
 
+%nonassoc EQUALS
+%right CONS
+%left PLUS MINUS
+%left TIMES
+
 %%
-
 program
-    : bindings {
-        root = ast_program($1.items, $1.count);
-        $$ = root;
-    }
+    : exp
+        { root = $1; }
     ;
 
-bindings
-    : /* empty */ {
-        $$.items = NULL;
-        $$.count = 0;
-    }
-    | bindings binding {
-        $$.count = $1.count + 1;
-        $$.items = realloc($1.items, sizeof(AST*) * $$.count);
-        $$.items[$$.count - 1] = $2;
-    }
+exp
+    : atom
+    | exp PLUS exp
+        { $$ = mk_binop(OP_PLUS,  $1, $3); }
+    | exp MINUS exp
+        { $$ = mk_binop(OP_MINUS, $1, $3); }
+    | MINUS exp %prec MINUS
+        { $$ = mk_binop(OP_MINUS, mk_int(0), $2); }
+    | exp TIMES exp
+        { $$ = mk_binop(OP_TIMES, $1, $3); }
+    | exp EQUALS exp
+        { $$ = mk_binop(OP_EQ,    $1, $3); }
+    | exp CONS exp
+        { $$ = mk_cons($1, $3); }
+    | IF exp THEN exp ELSE exp
+        { $$ = mk_if($2, $4, $6); }
+    | LET IDENT EQUALS exp IN exp END
+        { $$ = mk_let($2, $4, $6); }
+    | MATCH exp WITH cases
+        { $$ = mk_match($2, $4); }
     ;
 
-binding
-    : LP DEFINE IDENT expression RP {
-        $$ = ast_define($3, $4);
-    }
-    | LP TEST expression RP {
-        $$ = ast_test($3);
-    }
-    | expression {
+atom
+    : NUMBER
+        { $$ = mk_int($1); }
+    | TRUE
+        { $$ = mk_bool(1); }
+    | FALSE
+        { $$ = mk_bool(0); }
+    | UNIT
+        { $$ = mk_unit(); }
+    | IDENT
+        { $$ = mk_var($1); }
+    | E_LIST
+        { $$ = mk_nil(); }
+    | LP exp RP
+        { $$ = $2; }
+    ;
+
+cases
+    : case
+        { $$ = $1; }
+    | cases BAR case {
+        Case *c = $1;
+        while (c->next) c = c->next;
+        c->next = $3;
         $$ = $1;
     }
     ;
 
-expression
-    : literal
-    | IDENT {
-        $$ = ast_var($1);
-    }
-    | LP PLUS expression expression RP {
-        $$ = ast_bin(AST_PLUS, $3, $4);
-    }
-    | LP MINUS expression expression RP {
-        $$ = ast_bin(AST_MINUS, $3, $4);
-    }
-    | LP TIMES expression expression RP {
-        $$ = ast_bin(AST_TIMES, $3, $4);
-    }
-    | LP EQUALS expression expression RP {
-        $$ = ast_bin(AST_EQUALS, $3, $4);
-    }
-    | LP IF expression expression expression RP {
-        $$ = ast_if($3, $4, $5);
-    }
-    | LP LET LP LP IDENT expression RP RP expression RP {
-        $$ = ast_let($5, $6, $9);
-    }
-    | LP CONS expression expression RP {
-        $$ = ast_bin(AST_CONS, $3, $4);
-    }
-    | LP NIL_HUH expression RP {
-        $$ = ast_bin(AST_NIL_HUH, $3, NULL);
-    }
-    | LP CONS_HUH expression RP {
-        $$ = ast_bin(AST_CONS_HUH, $3, NULL);
-    }
-    | LP CAR expression RP {
-        $$ = ast_bin(AST_CAR, $3, NULL);
-    }
-    | LP CDR expression RP {
-        $$ = ast_bin(AST_CDR, $3, NULL);
-    }
+case
+    : pattern ARROW exp
+        { $$ = mk_case($1, $3, NULL); }
     ;
 
-literal
-    : NUMBER {
-        $$ = ast_int($1);
-    }
-    | TRUE {
-        $$ = ast_bool(1);
-    }
-    | FALSE {
-        $$ = ast_bool(0);
-    }
-    | NIL {
-        $$ = ast_nil();
-    }
+pattern
+    : IDENT
+        { $$ = mk_var($1); }
+    | E_LIST
+        { $$ = mk_nil(); }
+    | pattern CONS pattern
+        { $$ = mk_cons($1, $3); }
     ;
-
 %%
 
 void yyerror(const char *s) {
     fprintf(stderr, "Parse error: %s\n", s);
     exit(1);
-}
-
-void print_ast(AST *n, int indent) {
-    if (!n) return;
-    for (int i = 0; i < indent; i++) printf("  ");
-
-    switch(n->kind) {
-        case AST_INT:    printf("Int(%d)\n", n->int_val); break;
-        case AST_BOOL:   printf("Bool(%d)\n", n->bool_val); break;
-        case AST_NIL:    printf("Nil\n"); break;
-        case AST_VAR:    printf("Var(%s)\n", n->var); break;
-        case AST_DEFINE: printf("Define\n"); print_ast(n->bin.a, indent+1); print_ast(n->bin.b, indent+1); break;
-        case AST_TEST:   printf("Test\n"); print_ast(n->bin.a, indent+1); break;
-        case AST_PLUS: case AST_MINUS: case AST_TIMES: case AST_EQUALS:
-            printf("BinOp(%d)\n", n->kind);
-            print_ast(n->bin.a, indent+1);
-            print_ast(n->bin.b, indent+1);
-            break;
-        case AST_IF: printf("If\n"); print_ast(n->if_expr.cond, indent+1); print_ast(n->if_expr.then_branch, indent+1); print_ast(n->if_expr.else_branch, indent+1); break;
-        case AST_LET: printf("Let(%s)\n", n->let_expr.var); print_ast(n->let_expr.value, indent+1); print_ast(n->let_expr.body, indent+1); break;
-        case AST_CONS: printf("Cons\n"); print_ast(n->bin.a, indent+1); print_ast(n->bin.b, indent+1); break;
-        case AST_NIL_HUH: case AST_CONS_HUH: case AST_CAR: case AST_CDR:
-            printf("ListOp(%d)\n", n->kind); print_ast(n->bin.a, indent+1); break;
-        case AST_PROGRAM:
-            printf("Program\n");
-            for (int i = 0; i < n->program.count; i++)
-                print_ast(n->program.items[i], indent+1);
-            break;
-    }
-}
-
-int main(int argc, char **argv) {
-    (void)argc; (void)argv;
-    if (yyparse() == 0) {
-        puts("Parse succeeded");
-        print_ast(root, 0);
-    }
-    return 0;
 }
