@@ -13,7 +13,9 @@ letter [a-zA-Z]
 "(" { return LP; }
 ")" { return RP; }
 
-";".*\n { /* comment */ }
+";".*[\n<<EOF>>] { /* comment */ }
+
+"fun" { return FUN; }
 
 "true" { return TRUE; }
 "false" { return FALSE; }
