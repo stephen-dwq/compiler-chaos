@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ast.h"
 
 typedef enum {
     AST_INT,
@@ -26,27 +27,8 @@ typedef enum {
     OP_EQ
 } BinOp;
 
-typedef enum {
-    TY_INT,
-    TY_BOOL,
-    TY_UNIT,
-    TY_LIST,
-    TY_FUN,
-    TY_VAR
-} TypeKind;
-
 typedef struct AST AST;
 typedef struct Case Case;
-typedef struct Type Type;
-
-struct Type {
-    TypeKind kind;
-    union {
-        struct { Type *elem; } list;
-        struct { Type *from; Type *to; } fun;
-        struct { Type *instance; int id; } var;
-    };
-};
 
 struct Case {
     AST *pat;
@@ -71,16 +53,9 @@ struct AST {
     };
 };
 
-AST *root;
+AST *root = NULL;
 
 /* constructors */
-Type *ty_int(void);
-Type *ty_bool(void);
-Type *ty_unit(void);
-Type *ty_list(Type *elem);
-Type *ty_fun(Type *from, Type *to);
-Type *ty_var(char *name);
-
 AST *mk_fun(char *param, AST *body) {
     AST *n = malloc(sizeof(AST));
     n->kind = AST_FUN;
