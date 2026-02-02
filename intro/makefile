@@ -6,25 +6,16 @@ CFLAGS  := -Wall -Wextra -Iast -Iparser
 
 TARGET  := small_ml
 
-LEXER_DIR       := lexer
-PARSER_DIR      := parser
-AST_DIR         := ast
+LEXER_C := small_ml.yy.c
+PARSER_C := y.tab.c
+PARSER_H := y.tab.h
 
-LEXER_SRC   := $(LEXER_DIR)/$(TARGET).flex
-PARSER_SRC  := $(PARSER_DIR)/$(TARGET).yacc
-TYPECHECK_SRC     := $(AST_DIR)/typecheck.c
-MAIN_SRC    := main.c
+LEXER_O := small_ml.yy.o
+PARSER_O := y.tab.o
+MAIN_O := main.o
+AST_O := ast.o
 
-LEXER_C    := $(LEXER_DIR)/$(TARGET).yy.c
-PARSER_C   := $(PARSER_DIR)/$(TARGET).tab.c
-PARSER_H   := $(PARSER_DIR)/$(TARGET).tab.h
-
-LEXER_O    := $(LEXER_DIR)/$(TARGET).yy.o
-PARSER_O   := $(PARSER_DIR)/$(TARGET).tab.o
-TYPECHECK_O      := $(AST_DIR)/typecheck.o
-MAIN_O     := main.o
-
-OBJS := $(LEXER_O) $(PARSER_O) $(TYPECHECK_O) $(MAIN_O)
+OBJS := $(LEXER_O) $(PARSER_O) $(MAIN_O) $(AST_O)
 
 all: $(TARGET)
 
@@ -34,19 +25,13 @@ $(TARGET): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(PARSER_C) $(PARSER_H): $(PARSER_SRC)
-	$(YACC) -d -o $(PARSER_C) $(PARSER_SRC)
-
-$(LEXER_C): $(LEXER_SRC) $(PARSER_H)
+$(LEXER_C): small_ml.flex $(PARSER_H)
 	$(FLEX) -o $@ $<
 
-$(TYPECHECK_O): $(TYPECHECK_SRC)
-	$(CC) $(CFLAGS) -c $< -o $@
+$(PARSER_C) $(PARSER_H): small_ml.yacc
+	$(YACC) -d small_ml.yacc
 
 clean:
-	rm -f $(TARGET) \
-	      $(LEXER_C) $(PARSER_C) $(PARSER_H) \
-	      $(OBJS) \
-	      $(TARGET).dSYM
+	rm -f $(TARGET) $(OBJS) $(LEXER_C) $(PARSER_C) $(PARSER_H)
 
 .PHONY: all clean

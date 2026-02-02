@@ -1,8 +1,7 @@
 %top{
-typedef struct AST AST;
-typedef struct Case Case;
-#include "../parser/small_ml.tab.h"
 #include <string.h>
+#include "ast.h"
+#include "y.tab.h"
 }
 
 digit [0-9]
